@@ -1,17 +1,36 @@
 /*
 *******************************************************************************
-* Copyright (c) 2021 by M5Stack
-*                  Equipped with Atom-Lite/Matrix sample source code
-*                          配套  Atom-Lite/Matrix 示例源代码
-* Visit for moreinformation: https://docs.m5stack.com/en/unit/uhf_rfid
-* 获取更多资料请访问: https://docs.m5stack.com/zh_CN/unit/uhf_rfid
-*
-* Product: UHF RFID UNIT
-* Date: 2022/7/8
+* Product: RFID Seeker - QW.Co
+* Date: 03/2023
 *******************************************************************************
 */
+
+// Biblioteca de Comunicação com leitor de tags
 #include "RFID_command.h"
 
+
+#include "SPI.h"
+#include "TFT_eSPI.h"
+
+// The custom font file attached to this sketch must be included
+#include "MyFont.h"
+#include "Michroma20pt7b.h"
+#include "Michroma10pt7b.h"
+
+#define TEST_TEXT "ßäöü ñâàå"   // Text that will be printed on screen in the font
+//#define TEST_TEXT "Hello"     // Text that will be printed on screen in the font
+
+// Stock font and GFXFF reference handle
+#define GFXFF 1
+
+// Easily remembered name for the font
+#define MYFONT20 &Michroma20pt7b
+#define MYFONT10 &Michroma10pt7b
+
+// Use hardware SPI
+TFT_eSPI tft = TFT_eSPI();
+
+// Interface com leitor de RFID
 UHF_RFID RFID;
 
 String comd = " ";
@@ -25,23 +44,20 @@ TestInfo Test;
 
 void setup() {
 
-    Serial.begin(115200);
-    Serial.println("Iniciando aplicativo.");
-    
-    RFID._debug = 0;
-    
-    Serial.println("Iniciando serial 2 de comunicação com leitor.");
-    // A serial 2 é usada internamente no objeto UHF_RFID para cominicar com o leitor de RFID
-    //Serial2.begin(115200, SERIAL_8N1, 26, 27);
-    Serial2.begin(115200, SERIAL_8N1, 27, 26);
-    
-    // UHF_RFID set UHF_RFID设置
-    Serial.println("Comunicando com leitor...");
+  Serial.begin(115200);
+  Serial.println("Iniciando aplicativo.");
 
-    // String soft_version;
-    // soft_version = RFID.Query_software_version();
-    // Serial2.println(soft_version);
-    
+  // Inicializa a comunicação com o leitor de RFID
+  RFID._debug = 0;
+
+  Serial.println("Iniciando serial 2 de comunicação com leitor.");
+  // A serial 2 é usada internamente no objeto UHF_RFID para cominicar com o leitor de RFID
+  Serial2.begin(115200, SERIAL_8N1, 27, 26);
+
+  // UHF_RFID set UHF_RFID设置
+  Serial.println("Comunicando com leitor...");
+
+  // String soft_version;
   //  RFID.Set_transmission_Power(2600);
   //  Serial.println("Comunicando com leitor 2...");
   //  RFID.Set_the_Select_mode(0);
@@ -52,21 +68,36 @@ void setup() {
   //  Serial.println("Comunicando com leitor 5...");
   //  RFID.clean_data();
 
-    // Prompted to connect to UHF_RFID 提示连接UHF_RFID
-    Serial.println("Please connect UHF_RFID to Port C");
+  // Prompted to connect to UHF_RFID 提示连接UHF_RFID
+  Serial.println("UHF_RFID na serial 2.");
 
-    // Determined whether to connect to UHF_RFID 判断是否连接UHF_RFID
-   String soft_version;
-   while (soft_version.indexOf("V2.3.5") == -1) {
-   //while (sizeof(soft_version) == 0) {
+  String soft_version;
+  while (soft_version.indexOf("V2.3.5") == -1) {
        RFID.clean_data();
        RFID.Delay(150);
        RFID.Delay(150);
        soft_version = RFID.Query_software_version();
-   }
+  }
     
-    // The prompt will be RFID card close 提示将RFID卡靠近
-    Serial.println("Please approach the RFID card you need to use");
+  Serial.println("Leitor de RFID pronto.");
+
+  // Inicialiizando o display
+  tft.begin();
+
+  tft.setRotation(1);
+  // Set text datum to middle centre (MC_DATUM)
+  tft.setTextDatum(TL_DATUM);
+  tft.setTextPadding(0);
+  tft.fillScreen(TFT_BLACK);   
+
+    // Set text colour to white with black background
+  tft.setTextColor(TFT_WHITE, TFT_BLACK);      // White characters on black background
+
+  //tft.fillScreen(TFT_BLUE);                    // Clear screen
+  tft.setFreeFont(MYFONT20);                   // Select the font
+  tft.drawString("QW.Co", 0, 0, GFXFF); // Print the name of the font
+  tft.setFreeFont(MYFONT10);                   // Select the font
+  tft.drawString("RFID Seeker", 0, 45, GFXFF); // Print the name of the font
 }
 
 void loop() {
@@ -93,7 +124,8 @@ void loop() {
     }
     RFID.clean_data();  // Empty the data after using it
                         // 使用完数据后要将数据清空
-
+  tft.setFreeFont(MYFONT10);                   
+  tft.drawString("IDs encontrados:", 0, 80, GFXFF); 
     /*Other feature usage examples 其他功能使用例子*/
 
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
